@@ -27,6 +27,10 @@ if ((isset($options['u']) || isset($options['p']) || isset($options['h'])) && !(
 	output_message("Error: database options -u, -p and -h must all be used together\n");
 	exit;
 }
+if ((isset($options['file'])) && !(isset($options['u']) && isset($options['p']) && isset($options['h']))) {
+	output_message("Error: database options -u, -p and -h are required with --file\n");
+	exit;
+}
 if ((isset($options['create_table'])) && !(isset($options['u']) && isset($options['p']) && isset($options['h']))) {
 	output_message("Error: database options -u, -p and -h are required with --create_table\n");
 	exit;
@@ -52,6 +56,53 @@ if (isset($options['help'])) {
 if (isset($options['create_table'])) {
 	create_table();
 	exit;
+}
+if (isset($options['file'])) {
+	process_input_file($options['file']);
+	exit;
+}
+
+function store_user_record($data) {
+	$name = ucfirst(strtolower($data[0]));
+	$surname = ucfirst(strtolower($data[1]));
+	$email = strtolower($data[2]);
+	$dbh = get_db_handle();
+	$sql = "INSERT INTO users (name, surname, email) VALUES ('".mysqli_real_escape_string($dbh, $name)."', '".mysqli_real_escape_string($dbh, $surname)."', '".mysqli_real_escape_string($dbh, $email)."');";	
+	if (!mysqli_query($dbh, $sql)) {
+		output_message("Database Error: ".mysqli_error($dbh)."\n");
+	}
+}
+
+function validate_user_record($data) {
+	return true;	
+}
+
+function process_user_record($data) {
+	global $options;
+	if (validate_user_record($data)) {
+		store_user_record($data);
+	}
+}
+
+function process_input_file($file) {
+	if (file_exists($file) == false) {
+	    output_message("The file $file was not found\n");
+	    exit;
+	}
+	$row = 0;
+	if (($handle = fopen($file, "r")) !== FALSE) {
+	    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+	        $row++;
+	        if ($row == 1) { // skip first row of csv file
+	        	continue;
+	        }
+	        process_user_record($data);
+	    }
+	    fclose($handle);
+	} else {
+		output_message("The file $file could not be read\n");
+	    exit;
+	}
 }
 
 function output_message($message) {
@@ -82,6 +133,11 @@ function get_db_handle() {
 
 function create_table() {
 	$dbh = get_db_handle();
+	$sql = "DROP TABLE IF EXISTS `users`;";
+	if (!mysqli_query($dbh, $sql)) {
+		output_message("Database Error: ".mysqli_error($dbh)."\n");
+		exit;
+	}
 	$sql = "CREATE TABLE `users` (
 			  `name` varchar(255) NOT NULL,
 			  `surname` varchar(255) NOT NULL,
