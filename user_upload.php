@@ -74,12 +74,17 @@ function store_user_record($data) {
 }
 
 function validate_user_record($data) {
+	if (filter_var($data[2], FILTER_VALIDATE_EMAIL) == false) {
+		output_message("Error: Email ".$data[2]." is not valid\n");
+	    return false;
+	}
 	return true;	
 }
 
 function process_user_record($data) {
 	global $options;
-	if (validate_user_record($data)) {
+	$data[2] = trim($data[2]); // trim whitespace from email
+	if (validate_user_record($data) && !isset($options['dry_run'])) {
 		store_user_record($data);
 	}
 }
