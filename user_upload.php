@@ -58,11 +58,13 @@ if (isset($options['create_table'])) {
 	exit;
 }
 if (isset($options['file'])) {
+	$insert_count = 0;
 	process_input_file($options['file']);
 	exit;
 }
 
 function store_user_record($data) {
+	global $insert_count;
 	$name = ucfirst(strtolower($data[0]));
 	$surname = ucfirst(strtolower($data[1]));
 	$email = strtolower($data[2]);
@@ -70,6 +72,8 @@ function store_user_record($data) {
 	$sql = "INSERT INTO users (name, surname, email) VALUES ('".mysqli_real_escape_string($dbh, $name)."', '".mysqli_real_escape_string($dbh, $surname)."', '".mysqli_real_escape_string($dbh, $email)."');";	
 	if (!mysqli_query($dbh, $sql)) {
 		output_message("Database Error: ".mysqli_error($dbh)."\n");
+	} else {
+		$insert_count++;
 	}
 }
 
@@ -90,6 +94,7 @@ function process_user_record($data) {
 }
 
 function process_input_file($file) {
+	global $insert_count;
 	if (file_exists($file) == false) {
 	    output_message("The file $file was not found\n");
 	    exit;
@@ -103,6 +108,8 @@ function process_input_file($file) {
 	        }
 	        process_user_record($data);
 	    }
+	    output_message("Upload completed for file $file\n");
+	    output_message("Inserted $insert_count of ".($row - 1)." user records\n");
 	    fclose($handle);
 	} else {
 		output_message("The file $file could not be read\n");
