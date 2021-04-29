@@ -165,7 +165,7 @@ function create_table() {
 		output_message("Database Error: ".mysqli_error($dbh)."\n");
 		exit;
 	}
-	output_message("Database successfully created\n");	
+	output_message("Database table successfully created\n");	
 }
 
 ?>
